@@ -9,11 +9,10 @@ from multiprocessing import Pool
 
 from itertools import combinations
 
-from scipy.stats import pearsonr
-
 from validation_good_practice.data_readers.interface import reader
 from validation_good_practice.ancillary.metrics import bias, ubRMSD, Pearson_R, TCA
 from validation_good_practice.ancillary.paths import Paths
+
 
 def run():
 
@@ -23,6 +22,26 @@ def run():
     parts = np.arange(30) + 1
     p = Pool(30)
     p.map(main, parts)
+
+    merge_result_files()
+
+
+def merge_result_files():
+
+    sensors = ['ASCAT', 'SMOS', 'SMAP', 'MERRA2', 'ISMN']
+    paths = Paths()
+    path = paths.result_root / ('_'.join(sensors))
+
+    files = list(path.glob('**/*.csv'))
+
+    result = pd.DataFrame()
+    for f in files:
+        tmp = pd.read_csv(f, index_col=0)
+        result = result.append(tmp)
+        f.unlink()
+
+    result.sort_index().to_csv(path / 'result.csv', float_format='%0.3f')
+
 
 def result_template(sensors, gpi):
 
@@ -66,7 +85,7 @@ def result_template(sensors, gpi):
 
         res.update(dict(zip(['p_' + m + '_p_' + '_'.join(t) for t in tuples], np.full(len(tuples),np.nan))))
 
-        res.update(dict(zip(['n_corr_' + m + '_'.join(t) for t in tuples],np.full(len(tuples),np.nan))))
+        res.update(dict(zip(['n_corr_' + m + '_' + '_'.join(t) for t in tuples],np.full(len(tuples),np.nan))))
 
     return pd.DataFrame(res, index=(gpi,))
 
@@ -104,7 +123,6 @@ def main(part):
         res.loc[gpi, 'row'] = data.ease2_row
 
         try:
-        # if True:
             mode, dfs = io.read(gpi)
 
             for m, df in zip(mode,dfs):
@@ -170,10 +188,7 @@ def main(part):
                                 res.loc[gpi, 'r2_' + m + '_m_' + s + tcstr] = tca.loc['r2_m',s]
                                 res.loc[gpi, 'r2_' + m + '_u_' + s + tcstr] = tca.loc['r2_u',s]
 
-                    pass
-
         except:
-            print('gpi %i failed.' % gpi)
             continue
 
         if not result_file.exists():
