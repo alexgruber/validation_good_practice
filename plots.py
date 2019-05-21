@@ -1,5 +1,6 @@
 
-
+import warnings
+warnings.filterwarnings("ignore")
 
 import numpy as np
 import pandas as pd
@@ -19,9 +20,34 @@ from itertools import combinations
 from validation_good_practice.ancillary.grid import EASE2
 from validation_good_practice.ancillary.paths import Paths
 
+from validation_good_practice.ancillary.metrics import bias, ubRMSD, Pearson_R, TCA
+
+from validation_good_practice.data_readers.interface import reader
+
+def plot_ts():
+
+    lon = -101.392047
+    lat = 36.022264
+
+    sensors = ['ASCAT','SMOS','MERRA2', 'ISMN']
+
+    io = reader(sensors)
+
+    grid = pd.read_csv('/data_sets/EASE2_grid/grid_lut.csv', index_col=0)
+
+    gpi = grid.index[np.argmin((grid.ease2_lon.values-lon)**2 + (grid.ease2_lat.values-lat)**2)]
+
+    data = io.read(gpi)[1][0][['SMOS','MERRA2']]
+
+    print(data.mean())
+    data.plot()
+
+    plt.show()
+
+
 
 def boxplot_tca():
-    sensors = ['ASCAT', 'SMOS', 'SMAP', 'MERRA2', 'ISMN']
+    sensors = ['ASCAT', 'SMOS', 'MERRA2', 'ISMN']
     path = Paths().result_root / ('_'.join(sensors))
 
     res = pd.read_csv(path / 'result.csv', index_col=0)
@@ -29,7 +55,7 @@ def boxplot_tca():
     metric = ['bias', 'r2', 'ubrmse']
     ylim = [[0, 1.5], [0, 1], [0, 0.1]]
 
-    sensors = ['ASCAT', 'SMOS', 'SMAP']
+    sensors = ['ASCAT', 'SMOS']
 
     params = ['l_', 'm_', 'u_']
     titles = ['CI$_{2.5}$', 'CI$_{50}$', 'CI$_{97.5}$']
@@ -37,7 +63,7 @@ def boxplot_tca():
     figsize = (10, 8)
     fontsize = 14
 
-    pos = [i + j for i in np.arange(1,4) for j in [-0.2,0,0.2]]
+    pos = [i + j for i in np.arange(1,3) for j in [-0.2,0,0.2]]
     colors = [s for n in np.arange(3) for s in ['lightblue', 'lightgreen', 'coral'] ]
 
     f = plt.figure(figsize=figsize)
@@ -55,8 +81,8 @@ def boxplot_tca():
             for p, t in zip(params, titles):
 
                 if s == 'ASCAT':
-                    tag = m + '_grid_abs_' + p + s
-                    res[tag] = (res[tag + '_tc_ASCAT_SMOS_MERRA2'] + res[tag + '_tc_ASCAT_SMAP_MERRA2']) / 2
+                    tag = m + '_grid_abs_' + p + s + '_tc_ASCAT_SMOS_MERRA2'
+                    # res[tag] = (res[tag + '_tc_ASCAT_SMOS_MERRA2'] + res[tag + '_tc_ASCAT_SMAP_MERRA2']) / 2
                 else:
                     tag = m + '_grid_abs_' + p + s + '_tc_ASCAT_' + s + '_MERRA2'
 
@@ -77,7 +103,7 @@ def boxplot_tca():
         # if n < 3:
         #     plt.xticks(np.arange(1,4),'')
         # else:
-        plt.xticks(np.arange(1,4),sensors, fontsize=fontsize)
+        plt.xticks(np.arange(1,4),sensors + [''], fontsize=fontsize)
 
         plt.ylim(yl)
         plt.yticks(fontsize=fontsize)
@@ -99,7 +125,7 @@ def boxplot_tca():
 
 def boxplot_relative_metrics():
 
-    sensors = ['ASCAT', 'SMOS', 'SMAP', 'MERRA2', 'ISMN']
+    sensors = ['ASCAT', 'SMOS', 'MERRA2', 'ISMN']
     path = Paths().result_root / ('_'.join(sensors))
 
     res = pd.read_csv(path / 'result.csv', index_col=0)
@@ -107,7 +133,7 @@ def boxplot_relative_metrics():
     metric = ['bias', 'r', 'ubrmsd']
     ylim = [[-0.5, 0.5], [0, 1], [0.02, 0.25]]
 
-    sensors = ['ASCAT', 'SMOS', 'SMAP', 'MERRA2']
+    sensors = ['ASCAT', 'SMOS', 'MERRA2']
     tuples = ['_'.join(t) for t in combinations(sensors, 2)]
     names = [' - '.join(t) for t in combinations(sensors, 2)]
 
@@ -117,7 +143,7 @@ def boxplot_relative_metrics():
     figsize = (15, 8)
     fontsize = 14
 
-    pos = [i + j for i in np.arange(1,7) for j in [-0.2,0,0.2]]
+    pos = [i + j for i in np.arange(1,4) for j in [-0.2,0,0.2]]
     colors = [s for n in np.arange(6) for s in ['lightblue', 'lightgreen', 'coral'] ]
 
     f = plt.figure(figsize=figsize)
@@ -154,7 +180,7 @@ def boxplot_relative_metrics():
             plt.figlegend((box['boxes'][0:3]), titles, bbox_to_anchor=(0.787,0.28), fontsize=fontsize - 2)
 
         plt.xlim(0.5, 6.5)
-        plt.xticks(np.arange(1,7), names, fontsize=fontsize)
+        plt.xticks(np.arange(1,4), names, fontsize=fontsize)
 
         plt.ylim(yl)
         plt.yticks(fontsize=fontsize)
@@ -221,12 +247,12 @@ def plot_ease_img(data, tag,
 
 def spatial_plot_tca():
 
-    sensors = ['ASCAT', 'SMOS', 'SMAP', 'MERRA2', 'ISMN']
+    sensors = ['ASCAT', 'SMOS', 'MERRA2', 'ISMN']
     path = Paths().result_root / ('_'.join(sensors))
 
     res = pd.read_csv(path / 'result.csv', index_col=0)
 
-    sensors = ['ASCAT','SMOS','SMAP']
+    sensors = ['ASCAT','SMOS']
 
     params = ['l_','m_','u_']
     titles = ['CI$_{2.5}$', 'CI$_{50}$', 'CI$_{97.5}$']
@@ -248,10 +274,8 @@ def spatial_plot_tca():
                 plt.subplot(3,3,n)
 
                 if s == 'ASCAT':
-                    # tag = m + '_grid_abs_' + p + s + '_tc_ASCAT_SMAP_MERRA2'
-
-                    tag = m + '_grid_abs_' + p + s
-                    res[tag] = (res[tag + '_tc_ASCAT_SMOS_MERRA2'] + res[tag + '_tc_ASCAT_SMAP_MERRA2']) / 2
+                    tag = m + '_grid_abs_' + p + s + '_tc_ASCAT_SMOS_MERRA2'
+                    # res[tag] = (res[tag + '_tc_ASCAT_SMOS_MERRA2'] + res[tag + '_tc_ASCAT_SMAP_MERRA2']) / 2
                 else:
                     tag = m + '_grid_abs_' + p + s + '_tc_ASCAT_' + s + '_MERRA2'
 
@@ -281,12 +305,12 @@ def spatial_plot_tca():
 
 def spatial_plot_relative_metrics():
 
-    sensors = ['ASCAT', 'SMOS', 'SMAP', 'MERRA2', 'ISMN']
+    sensors = ['ASCAT', 'SMOS', 'MERRA2', 'ISMN']
     path = Paths().result_root / ('_'.join(sensors))
 
     res = pd.read_csv(path / 'result.csv', index_col=0)
 
-    sensors = ['ASCAT','SMOS','SMAP', 'MERRA2']
+    sensors = ['ASCAT','SMOS','MERRA2']
     tuples = ['_'.join(t) for t in combinations(sensors, 2)]
     names = [' - '.join(t) for t in combinations(sensors, 2)]
 
@@ -298,7 +322,7 @@ def spatial_plot_relative_metrics():
     fontsize = 14
 
     metric = ['bias','r', 'ubrmsd']
-    cbrange = [[0,0.4], [0,1], [0,0.1]]
+    cbrange = [[-0.08, 0.08], [0, 1], [0, 0.1]]
 
     for m, cb in zip(metric, cbrange):
 
@@ -342,12 +366,12 @@ def spatial_plot_relative_metrics():
 
 def spatial_plot_n():
 
-    sensors = ['ASCAT', 'SMOS', 'SMAP', 'MERRA2', 'ISMN']
+    sensors = ['ASCAT', 'SMOS', 'MERRA2', 'ISMN']
     path = Paths().result_root / ('_'.join(sensors))
 
     res = pd.read_csv(path / 'result.csv', index_col=0)
 
-    sensors = ['ASCAT', 'SMOS', 'SMAP', 'MERRA2']
+    sensors = ['ASCAT', 'SMOS', 'MERRA2']
     tuples = ['_'.join(t) for t in combinations(sensors, 2)]
     names = [' - '.join(t) for t in combinations(sensors, 2)]
 
@@ -391,11 +415,13 @@ def spatial_plot_n():
 
 if __name__=='__main__':
 
+    # plot_ts()
+
     # boxplot_tca()
-    boxplot_relative_metrics()
+    # boxplot_relative_metrics()
 
     # spatial_plot_tca()
-    # spatial_plot_relative_metrics()
+    spatial_plot_relative_metrics()
 
     # spatial_plot_n()
 
