@@ -10,7 +10,7 @@ from multiprocessing import Pool
 from itertools import combinations
 
 from validation_good_practice.data_readers.interface import reader
-from validation_good_practice.ancillary.metrics import bias, ubRMSD, Pearson_R, TCA
+from validation_good_practice.ancillary.metrics import bias, ubRMSD, Pearson_R, TCA, correct_n
 from validation_good_practice.ancillary.paths import Paths
 
 
@@ -25,10 +25,11 @@ def run():
 
     merge_result_files()
 
-
 def merge_result_files():
 
-    sensors = ['ASCAT', 'SMOS', 'SMAP', 'MERRA2', 'ISMN']
+    sensors = ['ASCAT', 'SMOS', 'MERRA2', 'ISMN']
+    # sensors = ['ASCAT', 'SMOS', 'SMAP', 'MERRA2', 'ISMN']
+
     paths = Paths()
     path = paths.result_root / ('_'.join(sensors))
 
@@ -87,6 +88,8 @@ def result_template(sensors, gpi):
 
         res.update(dict(zip(['n_corr_' + m + '_' + '_'.join(t) for t in tuples],np.full(len(tuples),np.nan))))
 
+        res.update({'n_corr_' + m + '_tc': np.nan})
+
     return pd.DataFrame(res, index=(gpi,))
 
 
@@ -94,7 +97,8 @@ def main(part):
 
     parts = 30
 
-    sensors = ['ASCAT', 'SMOS', 'SMAP', 'MERRA2', 'ISMN']
+    sensors = ['ASCAT', 'SMOS', 'MERRA2', 'ISMN']
+    # sensors = ['ASCAT', 'SMOS', 'SMAP', 'MERRA2', 'ISMN']
 
     paths = Paths()
 
@@ -129,6 +133,8 @@ def main(part):
 
                 if df is not None:
 
+                    res.loc[gpi, 'n_corr_' + m + '_tc'] = correct_n(df)
+
                     scl = m[0:4]
 
                     if scl == 'grid':
@@ -136,10 +142,16 @@ def main(part):
                     else:
                         res.loc[gpi, 'n_ismn'] = len(df)
 
-
                     b = bias(df)
-                    ubrmsd = ubRMSD(df, n_corr=b.loc[:,:,'n_corr'])
                     R = Pearson_R(df, n_corr=b.loc[:,:,'n_corr'])
+
+                    # rescale all columns to MERRA2 before calculating ubRMSD
+                    tmp_df = df.copy()
+                    # for col in ['ASCAT','SMOS','SMAP']:
+                    for col in ['ASCAT','SMOS']:
+                        tmp_df.loc[:, col] = ((tmp_df[col] - tmp_df[col].mean()) / tmp_df[col].std()) * tmp_df[
+                            'MERRA2'].std() + tmp_df['MERRA2'].mean()
+                    ubrmsd = ubRMSD(tmp_df, n_corr=b.loc[:,:,'n_corr'])
 
                     res.loc[gpi, 'n_'+ scl] = len(df)
 
@@ -147,17 +159,17 @@ def main(part):
 
                         res.loc[gpi, 'n_corr_' + m + '_' + '_'.join(t)] = R.loc[t[0],t[1],'n_corr']
 
-                        res.loc[gpi, 'bias_' + m + '_l_' + '_'.join(t)] = b.loc[t[0],t[1],'CI_l']
+                        res.loc[gpi, 'bias_' + m + '_l_' + '_'.join(t)] = b.loc[t[0],t[1],'CI_l_corr']
                         res.loc[gpi, 'bias_' + m + '_p_' + '_'.join(t)] = b.loc[t[0],t[1],'bias']
-                        res.loc[gpi, 'bias_' + m + '_u_' + '_'.join(t)] = b.loc[t[0],t[1],'CI_u']
+                        res.loc[gpi, 'bias_' + m + '_u_' + '_'.join(t)] = b.loc[t[0],t[1],'CI_u_corr']
 
-                        res.loc[gpi, 'ubrmsd_' + m + '_l_' + '_'.join(t)] = ubrmsd.loc[t[0],t[1],'CI_l']
+                        res.loc[gpi, 'ubrmsd_' + m + '_l_' + '_'.join(t)] = ubrmsd.loc[t[0],t[1],'CI_l_corr']
                         res.loc[gpi, 'ubrmsd_' + m + '_p_' + '_'.join(t)] = ubrmsd.loc[t[0],t[1],'ubRMSD']
-                        res.loc[gpi, 'ubrmsd_' + m + '_u_' + '_'.join(t)] = ubrmsd.loc[t[0],t[1],'CI_u']
+                        res.loc[gpi, 'ubrmsd_' + m + '_u_' + '_'.join(t)] = ubrmsd.loc[t[0],t[1],'CI_u_corr']
 
-                        res.loc[gpi, 'r_' + m + '_l_' + '_'.join(t)] = R.loc[t[0],t[1],'CI_l']
+                        res.loc[gpi, 'r_' + m + '_l_' + '_'.join(t)] = R.loc[t[0],t[1],'CI_l_corr']
                         res.loc[gpi, 'r_' + m + '_p_' + '_'.join(t)] = R.loc[t[0],t[1],'R']
-                        res.loc[gpi, 'r_' + m + '_u_' + '_'.join(t)] = R.loc[t[0],t[1],'CI_u']
+                        res.loc[gpi, 'r_' + m + '_u_' + '_'.join(t)] = R.loc[t[0],t[1],'CI_u_corr']
                         res.loc[gpi, 'p_' + m + '_p_' + '_'.join(t)] = R.loc[t[0],t[1],'p']
 
 

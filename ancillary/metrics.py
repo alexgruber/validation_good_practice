@@ -93,13 +93,13 @@ def bootstrap(df, bl=None):
         yield df.iloc[ind[0:N_df],:]
 
 
-def correct_n(n, df):
-    """ Corrects sample size based on avergae lag-1 auto-correlation. """
+def correct_n(df):
+    """ Calculate corrected sample size based on avergae lag-1 auto-correlation. """
 
     # get geometric average median lag-1 auto-correlation
     rho = estimate_lag1_autocorr(df)
 
-    return round(n * (1 - rho) / (1 + rho))
+    return int(round(len(df) * (1 - rho) / (1 + rho)))
 
 
 def TCA_calc(df, ref_ind=0):
@@ -167,6 +167,8 @@ def bias(df, dropna=True, alpha=0.95, flatten=True, n_corr=None):
         Confidence level for the confidence intervals
     flatten : boolean
         If set, results are returned as pd.Series in case df only holds 2 columns
+    n_corr : xr.DataArray (as returned by the method itself)
+        Optionally: auto-correlation-corrected sample size to speed up calculation
 
     Returns
     -------
@@ -226,7 +228,7 @@ def bias(df, dropna=True, alpha=0.95, flatten=True, n_corr=None):
             if n_corr is not None:
                 n_corr_ds = n_corr.loc[ds1, ds2].item()
             else:
-                n_corr_ds = correct_n(n, tmpdf)
+                n_corr_ds = correct_n(tmpdf)
             res.loc[ds1, ds2, 'n_corr'] = n_corr_ds
             res.loc[ds2, ds1, 'n_corr'] = n_corr_ds
             if n_corr_ds < 5:
@@ -262,6 +264,8 @@ def ubRMSD(df, dropna=True, alpha=0.95, flatten=True, n_corr=None):
         Confidence level for the confidence intervals
     flatten : boolean
         If set, results are returned as pd.Series in case df only holds 2 columns
+    n_corr : xr.DataArray (as returned by the method itself)
+        Optionally: auto-correlation-corrected sample size to speed up calculation
 
     Returns
     -------
@@ -320,7 +324,7 @@ def ubRMSD(df, dropna=True, alpha=0.95, flatten=True, n_corr=None):
             if n_corr is not None:
                 n_corr_ds = n_corr.loc[ds1, ds2].item()
             else:
-                n_corr_ds = correct_n(n, tmpdf)
+                n_corr_ds = correct_n(tmpdf)
 
             res.loc[ds1, ds2, 'n_corr'] = n_corr_ds
             res.loc[ds2, ds1, 'n_corr'] = n_corr_ds
@@ -357,6 +361,8 @@ def Pearson_R(df, dropna=True, alpha=0.95, flatten=True, n_corr=None):
         Confidence level for the confidence intervals
     flatten : boolean
         If set, results are returned as pd.Series in case df only holds 2 columns
+    n_corr : xr.DataArray (as returned by the method itself)
+        Optionally: auto-correlation-corrected sample size to speed up calculation
 
     Returns
     -------
@@ -417,7 +423,7 @@ def Pearson_R(df, dropna=True, alpha=0.95, flatten=True, n_corr=None):
             if n_corr is not None:
                 n_corr_ds = n_corr.loc[ds1, ds2].item()
             else:
-                n_corr_ds = correct_n(n, tmpdf)
+                n_corr_ds = correct_n(tmpdf)
 
             res.loc[ds1, ds2, 'n_corr'] = n_corr_ds
             res.loc[ds2, ds1, 'n_corr'] = n_corr_ds
