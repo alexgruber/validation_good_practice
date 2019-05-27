@@ -45,8 +45,7 @@ def plot_ts():
     plt.show()
 
 
-def boxplot_tca_ismn(sensors):
-    path = Paths().result_root / ('_'.join(sensors))
+def boxplot_tca_ismn(path, sensors):
 
     res = pd.read_csv(path / 'result.csv', index_col=0)
 
@@ -125,9 +124,7 @@ def boxplot_tca_ismn(sensors):
     plt.close()
 
 
-def boxplot_tca(sensors, mode='abs'):
-
-    path = Paths().result_root / ('_'.join(sensors))
+def boxplot_tca(path, sensors, mode='abs'):
 
     res = pd.read_csv(path / 'result.csv', index_col=0)
 
@@ -207,9 +204,7 @@ def boxplot_tca(sensors, mode='abs'):
     # plt.close()
 
 
-def boxplot_relative_metrics_ismn(sensors):
-
-    path = Paths().result_root / ('_'.join(sensors))
+def boxplot_relative_metrics_ismn(path):
 
     res = pd.read_csv(path / 'result.csv', index_col=0)
 
@@ -298,9 +293,7 @@ def boxplot_relative_metrics_ismn(sensors):
     plt.close()
 
 
-def boxplot_relative_metrics(sensors):
-
-    path = Paths().result_root / ('_'.join(sensors))
+def boxplot_relative_metrics(path):
 
     res = pd.read_csv(path / 'result.csv', index_col=0)
 
@@ -446,9 +439,7 @@ def plot_ease_img(data, tag,
 
     return im
 
-def spatial_plot_tca_diff(mode='abs'):
-
-    path = Paths().result_root / ('_'.join(sensors))
+def spatial_plot_tca_diff(path, mode='abs'):
 
     res = pd.read_csv(path / 'result.csv', index_col=0)
 
@@ -488,9 +479,7 @@ def spatial_plot_tca_diff(mode='abs'):
     f.savefig(fout, dpi=300, bbox_inches='tight')
     plt.close()
 
-def spatial_plot_tca(sensors,mode='abs'):
-
-    path = Paths().result_root / ('_'.join(sensors))
+def spatial_plot_tca(path, sensors,mode='abs'):
 
     res = pd.read_csv(path / 'result.csv', index_col=0)
 
@@ -546,9 +535,7 @@ def spatial_plot_tca(sensors,mode='abs'):
         # f.savefig(fout, dpi=300, bbox_inches='tight')
         # plt.close()
 
-def spatial_plot_tca_ci_diff(sensors, mode='abs'):
-
-    path = Paths().result_root / ('_'.join(sensors))
+def spatial_plot_tca_ci_diff(path, sensors, mode='abs'):
 
     res = pd.read_csv(path / 'result.csv', index_col=0)
 
@@ -637,14 +624,11 @@ def spatial_plot_tca_ci_diff(sensors, mode='abs'):
         f.savefig(fout, dpi=300, bbox_inches='tight')
         plt.close()
 
-def spatial_plot_relative_metrics(sensors,mode='abs'):
-
-    path = Paths().result_root / ('_'.join(sensors))
+def spatial_plot_relative_metrics(path, mode='abs'):
 
     res = pd.read_csv(path / 'result.csv', index_col=0)
 
     sensors = ['ASCAT', 'SMOS', 'SMAP', 'MERRA2']
-
 
     tuples = ['_'.join(t) for t in combinations(sensors, 2)]
     names = [' - '.join(t) for t in combinations(sensors, 2)]
@@ -712,9 +696,7 @@ def spatial_plot_relative_metrics(sensors,mode='abs'):
         plt.close()
 
 
-def spatial_plot_relative_metrics_ci_diff(sensors, mode='abs'):
-
-    path = Paths().result_root / ('_'.join(sensors))
+def spatial_plot_relative_metrics_ci_diff(path, mode='abs'):
 
     res = pd.read_csv(path / 'result.csv', index_col=0)
 
@@ -728,13 +710,13 @@ def spatial_plot_relative_metrics_ci_diff(sensors, mode='abs'):
     figsize = (8.5,12)
     fontsize = 14
 
-    metric = ['bias','r', 'ubrmsd'][0:1]
+    metric = ['bias','r', 'ubrmsd']
     if mode == 'abs':
-        cbrange = [[-0.12,0.12], [0,0.8], [0,0.1]][0:1]
-        cbrange_diff = [[0,0.07], [0,0.8], [0,0.04]][0:1]
+        cbrange = [[-0.12,0.12], [0,0.8], [0,0.1]]
+        cbrange_diff = [[0,0.07], [0,0.8], [0,0.04]]
     else:
-        cbrange = [[-0.12, 0.12], [0, 0.8], [0, 0.06]][0:1]
-        cbrange_diff = [[0, 0.03], [0, 0.5], [0, 0.02]][0:1]
+        cbrange = [[-0.12, 0.12], [0, 0.8], [0, 0.06]]
+        cbrange_diff = [[0, 0.03], [0, 0.5], [0, 0.02]]
 
     for m, cb, cb_diff in zip(metric, cbrange, cbrange_diff):
 
@@ -823,9 +805,7 @@ def spatial_plot_relative_metrics_ci_diff(sensors, mode='abs'):
         plt.close()
 
 
-def spatial_plot_n(sensors, mode='abs'):
-
-    path = Paths().result_root / ('_'.join(sensors))
+def spatial_plot_n(path, mode='abs'):
 
     res = pd.read_csv(path / 'result.csv', index_col=0)
 
@@ -872,8 +852,8 @@ def spatial_plot_n(sensors, mode='abs'):
 
     f.subplots_adjust(wspace=0.04, hspace=0.03, bottom=0.05)
 
-    x0 = (f.axes[-4].get_position().x1 + f.axes[-4].get_position().x0) / 2
-    x1 = (f.axes[-3].get_position().x1 + f.axes[-3].get_position().x0) / 2
+    x0 = (f.axes[0].get_position().x1 + f.axes[0].get_position().x0) / 2
+    x1 = (f.axes[1].get_position().x1 + f.axes[1].get_position().x0) / 2
     cbar_ax = f.add_axes([x0, 0.03, x1-x0, 0.025])
     cb = f.colorbar(im1, orientation='horizontal', cax=cbar_ax)
     for t in cb.ax.get_xticklabels():
@@ -887,11 +867,11 @@ def spatial_plot_n(sensors, mode='abs'):
     for t in cb.ax.get_xticklabels():
         t.set_fontsize(fontsize)
 
-    # plt.show()
+    plt.show()
 
-    fout = path / 'plots' / (mode + '_spatial_plot_sample_size.png')
-    f.savefig(fout, dpi=300, bbox_inches='tight')
-    plt.close()
+    # fout = path / 'plots' / (mode + '_spatial_plot_sample_size.png')
+    # f.savefig(fout, dpi=300, bbox_inches='tight')
+    # plt.close()
 
 
 if __name__=='__main__':
@@ -899,23 +879,31 @@ if __name__=='__main__':
     mode = 'abs'
     # mode = 'anom_st'
 
-    sensors = ['ASCAT', 'SMOS', 'SMAP', 'MERRA2', 'ISMN']
-    # sensors = ['ASCAT', 'SMOS', 'MERRA2', 'ISMN']
+    # sensors = ['ASCAT', 'SMOS', 'SMAP', 'MERRA2', 'ISMN']
+    sensors = ['ASCAT', 'SMOS', 'MERRA2', 'ISMN']
 
-    # spatial_plot_tca_diff(mode)
+    # path = Paths().result_root / ('_'.join(sensors))
+    path = Paths().result_root / 'CI80' / ('_'.join(sensors))
 
-    # boxplot_tca_ismn(sensors, mode)
-    # boxplot_relative_metrics_ismn(sensors, mode)
+    if not (path / 'plots').exists():
+        Path.mkdir(path / 'plots')
+
+    # spatial_plot_tca_diff(path, mode)
+
+    # boxplot_tca(path, sensors, mode)
+    # boxplot_relative_metrics(path, sensors, mode)
+
+    # spatial_plot_tca_ci_diff(path, sensors, mode)
+    # spatial_plot_relative_metrics_ci_diff(path, sensors, mode)
+
+    spatial_plot_n(path, mode)
 
 
-    boxplot_tca(sensors, mode)
-    # boxplot_relative_metrics(sensors, mode)
 
 
-    # spatial_plot_tca_ci_diff(sensors, mode)
-    # spatial_plot_relative_metrics_ci_diff(sensors, mode)
+    # boxplot_tca_ismn(path, sensors, mode)
+    # boxplot_relative_metrics_ismn(path, sensors, mode)
 
-    # spatial_plot_n(sensors, mode)
 
-    # spatial_plot_tca(sensors, mode)
-    # spatial_plot_relative_metrics(sensors, mode)
+    # spatial_plot_tca(path, sensors, mode)
+    # spatial_plot_relative_metrics(path, sensors, mode)
