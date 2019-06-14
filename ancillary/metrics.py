@@ -7,12 +7,21 @@ from scipy.stats import pearsonr, norm, t, chi
 import scipy.optimize as optimization
 
 def estimate_tau(in_df, n_lags=90):
-    """ Estimate characteristic time lengths for pd.DataFrame columns """
+    """
+    Estimate characteristic time lengths for pd.DataFrame columns by fitting an exponential auto-correlation function.
+
+    Parameters
+    ----------
+    in_df : pd.DataFrame
+        Input data frame
+    n_lags : maximum allowed lag size to be considered
+
+    """
 
     df = in_df.copy().resample('1D').last()
     n_cols = len(df.columns)
 
-    # calculate auto-correlation for different lags
+    # calculate auto-correlation coefficients for different lags
     rho = np.full((n_cols,n_lags), np.nan)
     for lag in np.arange(n_lags):
         for i,col in enumerate(df):
@@ -36,8 +45,19 @@ def estimate_tau(in_df, n_lags=90):
 
     return tau
 
+
 def estimate_lag1_autocorr(df, tau=None):
-    """ Estimate geometric average median lag-1 auto-correlation """
+    """
+    Estimate geometric average median lag-1 auto-correlation
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Input data frame
+    tau : list of floats
+        Pass auto-correlation of individual df columns if already calculated to speed up processing
+
+    """
 
     # Get auto-correlation length for all time series
     if tau is None:
@@ -45,27 +65,67 @@ def estimate_lag1_autocorr(df, tau=None):
 
     # Calculate gemetric average lag-1 auto-corr
     avg_spc_t = np.median((df.index[1::] - df.index[0:-1]).days)
-    ac = np.exp(-avg_spc_t/tau)
-    avg_ac = ac.prod()**(1./len(ac))
+    rho_i = np.exp(-avg_spc_t/tau)
+    rho = ac.prod()**(1./len(rho_i))
 
-    return avg_ac
+    return rho
 
 
-def calc_bootstrap_blocklength(df, avg_ac=None):
-    """ Calculate optimal block length [days] for block-bootstrapping of a data frame """
+def correct_n(df, rho=None):
+    """
+    Calculate corrected sample size based on avergae lag-1 auto-correlation.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Input data frame
+    rho : float
+        Pass average lag-1 auto-correlation if already calculated to speed up processing.
+
+    """
+
+    # get geometric average median lag-1 auto-correlation
+    if rho is None:
+        rho = estimate_lag1_autocorr(df)
+
+    return int(round(len(df) * (1 - rho) / (1 + rho)))
+
+
+def calc_bootstrap_blocklength(df, rho=None):
+    """
+    Calculate optimal block length [days] for block-bootstrapping of a data frame
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Input data frame
+    rho : float
+        Pass average lag-1 auto-correlation if already calculated to speed up processing
+
+    """
 
     # Get average lag-1 auto-correlation
-    if avg_ac is None:
-        avg_ac = estimate_lag1_autocorr(df)
+    if rho is None:
+        rho = estimate_lag1_autocorr(df)
 
     # Estimate block length (maximum 0.8 * data length)
-    bl = min([round((np.sqrt(6) * avg_ac / (1 - avg_ac**2))**(2/3.)*len(df)**(1/3.)), round(0.8*len(df))])
+    bl = min([round((np.sqrt(6) * rho / (1 - rho**2))**(2/3.)*len(df)**(1/3.)), round(0.8*len(df))])
 
     return bl
 
 
 def bootstrap(df, bl=None):
-    """ Bootstrap sample generator for a data frame with given block length [days] """
+    """
+    Bootstrap sample generator for a data frame with given block length [days]
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Input data frame
+    bl : float
+        Pass optimal block-length if already calculated to speed up processing
+
+    """
 
     # Get optimal bootstrap block length
     if bl is None:
@@ -93,16 +153,21 @@ def bootstrap(df, bl=None):
         yield df.iloc[ind[0:N_df],:]
 
 
-def correct_n(df):
-    """ Calculate corrected sample size based on avergae lag-1 auto-correlation. """
 
-    # get geometric average median lag-1 auto-correlation
-    rho = estimate_lag1_autocorr(df)
+def TCA_calc(df, ref_ind=2):
 
-    return int(round(len(df) * (1 - rho) / (1 + rho)))
+    """
+    Calculates triple collocation based squared correlations against the unknown truth, SCALED error standard
+    deviations, and scaling coefficients for a given data frame.
 
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Input Dataframe
+    ref_ind : int
+        column index of reference data set for estimating scaling coefficients
 
-def TCA_calc(df, ref_ind=0):
+    """
 
     cov = df.dropna().cov().values
 
@@ -125,20 +190,39 @@ def TCA_calc(df, ref_ind=0):
 
 
 def TCA(df, ref_ind=2, alpha=0.95, bootstraps=1000):
+    """
+    Calculates triple collocation based squared correlations against the unknown truth, SCALED error standard
+    deviations, and scaling coefficients for a given data frame.
 
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Input Dataframe
+    ref_ind : int
+        column index of reference data set for estimating scaling coefficients
+    alpha : float
+        Confidence level
+    bootstraps: int
+        Number of bootstrap resamples that should be calculated
+
+    """
+
+    # Initialize bootstrap generator to draw resamples from
     bss = bootstrap(df)
 
+    # Create data frame to store results in p = direct TCA estimates, m = median of the bootstrap sampling distribution.
     res = pd.DataFrame(columns=df.columns.values,
                        index=[met + mod for met in ['r2_', 'ubRMSE_', 'beta_'] for mod in ['p','l','m','u']])
 
+    # Calculate TCA metrics from the original sample
     res.loc['r2_p',:], res.loc['ubRMSE_p',:], res.loc['beta_p',:] = TCA_calc(next(bss), ref_ind=ref_ind)
 
     arr = np.full((3, 3, bootstraps), np.nan)
 
-
     ci_l = (1 - alpha) / 2. * 100
     ci_u = 100 - ci_l
 
+    # Calculate TCA metrics from the bootstrap samples
     for i in np.arange(bootstraps):
         arr[:,0,i], arr[:,1,i], arr[:,2,i] = TCA_calc(next(bss), ref_ind=ref_ind)
 
@@ -149,7 +233,6 @@ def TCA(df, ref_ind=2, alpha=0.95, bootstraps=1000):
     res.loc[['beta_l','beta_m','beta_u'], :] = ci[:,:,2]
 
     return res
-
 
 
 def bias(df, dropna=True, alpha=0.95, flatten=True, n_corr=None):
@@ -217,6 +300,7 @@ def bias(df, dropna=True, alpha=0.95, flatten=True, n_corr=None):
             bias = diff.mean()
             ubRMSD = diff.std(ddof=1)
 
+            # Calculate confidence intervals
             t_l, t_u = t.interval(alpha, n-1)
             CI_l = bias + t_l * ubRMSD / np.sqrt(n)
             CI_u = bias + t_u * ubRMSD / np.sqrt(n)
@@ -313,6 +397,7 @@ def ubRMSD(df, dropna=True, alpha=0.95, flatten=True, n_corr=None):
             diff = tmpdf[ds1].values - tmpdf[ds2].values
             ubRMSD = diff.std(ddof=1)
 
+            # Calculate confidence intervals
             chi_l, chi_u = chi.interval(alpha, n-1)
             CI_l = ubRMSD * np.sqrt(n-1) / chi_u
             CI_u = ubRMSD * np.sqrt(n-1) / chi_l
@@ -443,19 +528,3 @@ def Pearson_R(df, dropna=True, alpha=0.95, flatten=True, n_corr=None):
             res = pd.Series(res.loc[cols[0], cols[1], :], index=stats, dtype='float32')
 
     return res
-
-
-
-if __name__ == '__main__':
-
-    from pyldas.interface import LDAS_io
-    io = LDAS_io('ObsFcstAna','US_M36_SMOS40_DA_cal_scaled')
-    ser1 = io.timeseries['obs_fcst'][0,40,40].to_series()
-    ser2 = io.timeseries['obs_obs'][0,40,40].to_series()
-    df = pd.DataFrame([ser1,ser2]).swapaxes(0,1)
-
-    print(bias(df))
-    print(ubRMSD(df))
-    print(Pearson_R(df))
-    # for val in res.loc['obs_ana','obs_fcst',:]:
-    #     print val.values

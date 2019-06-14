@@ -5,7 +5,21 @@ import xarray as xr
 
 from validation_good_practice.ancillary.paths import Paths
 
-def reshuffle_merra2(part=1):
+def resample_merra2(part=1, parts=1):
+    """
+    This resamples MERRA-2 data from the MERRA grid onto the EASE2 grid and stores data for each grid cell into .csv files.
+
+    A grid look-up table needs to be created first (method: ancillary.grid.create_lut).
+
+    Parameters
+    ----------
+    part : int
+        Data subset to be processed - Data can be resampled in subsets for parallelization to speed-up the processing.
+    parts : int
+        Number of parts in which to split the data for parallel processing.
+        Per default, all data are resampled at once.
+
+    """
 
     paths = Paths()
 
@@ -22,7 +36,6 @@ def reshuffle_merra2(part=1):
     gpi_lut = pd.read_csv(paths.lut, index_col=0)[['merra2_lon','merra2_lat']]
 
     # split domain for parallelization
-    parts = 2
     subs = (np.arange(parts + 1) * len(gpi_lut) / parts).astype('int')
     subs[-1] = len(gpi_lut)
     start = subs[part - 1]
@@ -45,5 +58,3 @@ def reshuffle_merra2(part=1):
         fname = dir_out / ('%i.csv' % gpi)
         Ser.to_csv(fname, float_format='%.4f')
 
-if __name__=='__main__':
-    reshuffle_merra2(1)

@@ -18,8 +18,6 @@ class EASE2(object):
         Array containing the latitudes of grid rows
     ease_lons : np.array
         Array containing the longitudes of grid columns
-    shape : tuple
-        lat/lon dimensions
     """
 
     def __init__(self):
@@ -58,7 +56,13 @@ class EASE2(object):
 
 
 def create_lut():
+    """
+     Creates a look-up table that maps ASCAT, SMOS, and MERRA grid points onto the EASEv2 grid.
+     This is required for the resampling routines within the individual data readers
 
+     """
+
+    # Set to False if a particular data set should be excluded.
     initiate = True
     add_ascat = True
     add_smos = True
@@ -101,6 +105,7 @@ def create_lut():
     # ------------------------------------------------------------------------------------------------------------------
     # A list of ASCAT gpis over the USA can be exported from https://www.geo.tuwien.ac.at/dgg/index.php
     # This list is used here to restrict EASE2-grid cells to CONUS only.
+
     if add_ascat is True:
         ascat_gpis = pd.read_csv(paths.ascat / 'warp5_grid' / 'pointlist_United States of America_warp.csv', index_col=0)
         ascat_gpis = ascat_gpis[(ascat_gpis.lon >= lonmin) & (ascat_gpis.lon <= lonmax) &
@@ -133,6 +138,8 @@ def create_lut():
 
     # ------------------------------------------------------------------------------------------------------------------
     # Read SMOS grid information and clip CONUS
+    # Grid information can be found at: http://www.cesbio.ups-tlse.fr/SMOS_blog/?tag=dgg
+
     if add_smos is True:
         smos = pd.read_csv(paths.smos / 'smos_grid.txt', delim_whitespace=True, names=['gpi','lon','lat','alt','wf'])
         smos = smos[(smos.lon >= lonmin) & (smos.lon <= lonmax) &
@@ -148,7 +155,8 @@ def create_lut():
             lut.loc[idx, 'smos_lat'] = smos[(r-r.min())<0.0001]['lat'].values[0]
 
     # ------------------------------------------------------------------------------------------------------------------
-    # Read MERRA grid information (lats/lons taken from a CONUS netcdf image subset)
+    # Read MERRA-2 grid information (lats/lons taken from a CONUS netcdf image subset)
+
     if add_merra is True:
         merra = Dataset(paths.merra2 / 'raw' / '2015-2018' / 'MERRA2_400.tavg1_2d_lnd_Nx.20150101.SUB.nc')
         lons, lats = np.meshgrid(merra.variables['lon'][:].data, merra.variables['lat'][:].data)
@@ -165,7 +173,3 @@ def create_lut():
 
 
     lut.to_csv(fname, float_format='%.6f')
-
-
-if __name__=='__main__':
-    create_lut()

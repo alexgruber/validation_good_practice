@@ -8,6 +8,7 @@ from validation_good_practice.ancillary.grid import EASE2
 from validation_good_practice.ancillary.paths import Paths
 
 def generate_station_list():
+    """ This routine generates a list of available ISMN stations and the EASEv2 grid point they are located in. """
 
     paths = Paths()
 
@@ -26,11 +27,13 @@ def generate_station_list():
     df.drop_duplicates(inplace=True)
     df.index = duplicate_idx
 
+    # create EASEv2 grid domain
     grid = EASE2()
     lons, lats = np.meshgrid(grid.ease_lons, grid.ease_lats)
     lons = lons.flatten()
     lats = lats.flatten()
 
+    # find EASEv2 grid points in which the individual stations are located
     for i, (idx, data) in enumerate(df.iterrows()):
         print('%i / %i' % (i, len(df)))
         r = (lons - data.lon) ** 2 + (lats - data.lat) ** 2
@@ -39,7 +42,14 @@ def generate_station_list():
     df.to_csv(paths.ismn / 'station_list.csv')
 
 
-def resample_timeseries():
+def resample_ismn():
+    """
+    This resamples ISMN data onto the EASE2 grid and stores data for each grid cell into .csv files.
+    If single grid cells contain multiple stations, they are averaged.
+
+    A grid look-up table needs to be created first (method: ancillary.grid.create_lut).
+
+    """
 
     paths = Paths()
 
@@ -62,7 +72,7 @@ def resample_timeseries():
         if len(idx) == 1:
             try:
                 ts = io.read_ts(int(idx[0]))
-                ts = ts[ts['soil moisture_flag'] == 'G']['soil moisture']
+                ts = ts[ts['soil moisture_flag'] == 'G']['soil moisture'] # Get only "good" data based on ISMN QC
                 ts.tz_convert(None).to_csv(fname, float_format='%.4f')
             except:
                 print('Corrupt file: ' + io.metadata[int(idx[0])]['filename'])
@@ -73,7 +83,7 @@ def resample_timeseries():
             for i in idx:
                 try:
                     ts = io.read_ts(int(i))
-                    df += [ts[ts['soil moisture_flag'] == 'G']['soil moisture']]
+                    df += [ts[ts['soil moisture_flag'] == 'G']['soil moisture']] # Get only "good" data based on ISMN QC
                 except:
                     print('Corrupt file: ' + io.metadata[int(i)]['filename'])
             if len(df) == 0:

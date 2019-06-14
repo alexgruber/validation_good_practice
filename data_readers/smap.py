@@ -6,7 +6,13 @@ import pandas as pd
 
 from validation_good_practice.ancillary.paths import Paths
 
-def reshuffle_smap():
+def reformat_smap():
+    """
+    This extracts raw SMAP EASEv2 data and stores it into .csv files for later processing.
+
+    A grid look-up table needs to be created first (method: ancillary.grid.create_lut).
+
+    """
 
     paths = Paths()
 
@@ -49,9 +55,6 @@ def reshuffle_smap():
     for i, gpi in enumerate(ease_gpis):
         Ser = pd.Series(res_arr[:,i],index=dates).dropna()
         if len(Ser) > 0:
-            Ser = Ser.groupby(Ser.index).last()
+            Ser = Ser.groupby(Ser.index).last() # Make sure that no time duplicates exist!
             fname = dir_out / ('%i.csv' % gpi)
             Ser.to_csv(fname,float_format='%.4f')
-
-if __name__=='__main__':
-    reshuffle_smap()

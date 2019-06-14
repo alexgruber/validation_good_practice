@@ -8,11 +8,17 @@ from netCDF4 import Dataset
 
 from validation_good_practice.ancillary.paths import Paths
 
-def reshuffle_smos():
+def resample_smos():
+    """
+    This resamples SMOS data from the SMOS grid onto the EASE2 grid and stores data for each grid cell into .csv files.
+
+    A grid look-up table needs to be created first (method: ancillary.grid.create_lut).
+
+    """
 
     paths = Paths()
 
-    # Collect all nc files
+    # Collect all .nc files
     path = paths.smos / 'raw' / 'MIR_SMUDP2_nc'
     nc_files = sorted(path.glob('**/*.nc'))
 
@@ -40,23 +46,15 @@ def reshuffle_smos():
             smos_ind = np.where(smos_gpis == gpi_lut.loc[ease_gpi])[0]
             if len(smos_ind) > 0:
 
+                # extract soil moisture data
                 sm = float(ds.variables['Soil_Moisture'][smos_ind])
                 if np.isnan(sm) | (sm < 0.):
                     continue
 
+                # Mask for RFI and Chi-2 flag
                 rfi = float(ds.variables['RFI_Prob'][smos_ind])
                 chi_2_p = float(ds.variables['Chi_2_P'][smos_ind])
                 valid = (rfi < 0.1) & (chi_2_p > 0.05)
-
-                # cf = float(ds.variables['Confidence_Flags'][smos_ind])
-                # if np.isnan(cf):
-                #     continue
-                # cf = int(cf)
-                # sf = long(ds.variables['Science_Flags'][smos_ind])
-                #
-                # valid = ((cf & 1 << 1) | (cf & 1 << 2) | (cf & 1 << 4) | (cf & 1 << 5) | (cf & 1 << 6) |
-                #         (sf & 1 << 5) | (sf & 1 << 16) | (sf & 1 << 18) | (sf & 1 << 19) | (sf & 1 << 26) == 0) & \
-                #         (rfi < 0.1)
 
                 if valid:
                     res_arr[i, res_ind] = sm
@@ -68,10 +66,6 @@ def reshuffle_smos():
     for i, gpi in enumerate(ease_gpis):
         Ser = pd.Series(res_arr[:,i],index=dates).dropna()
         if len(Ser) > 0:
-            Ser = Ser.groupby(Ser.index).last()
+            Ser = Ser.groupby(Ser.index).last() # Make sure that no time duplicates exist!
             fname = dir_out / ('%i.csv' % gpi)
             Ser.to_csv(fname,float_format='%.4f')
-
-if __name__=='__main__':
-    reshuffle_smos()
-

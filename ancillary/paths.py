@@ -2,6 +2,7 @@
 from pathlib import Path
 
 class Paths(object):
+    """ This class contains the paths where data are stored and results should be written to."""
 
     def __init__(self):
 
