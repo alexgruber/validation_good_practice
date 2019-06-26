@@ -172,4 +172,6 @@ def create_lut():
             lut.loc[idx, 'merra2_lat'] = lats[np.where((r - r.min())<0.0001)]
 
 
+    if not lut.parent.exists():
+        lut.parent.mkdir()
     lut.to_csv(fname, float_format='%.6f')

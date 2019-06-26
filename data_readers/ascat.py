@@ -52,7 +52,7 @@ class HSAF_io(object):
             number of the cell that should be read
         """
 
-        fname = self.data_path / self.version + ('_%04i.nc' % cell)
+        fname = self.data_path / (self.version + ('_%04i.nc' % cell))
         if not fname.exists():
             print('File not found: ' + fname)
             return False
@@ -150,7 +150,10 @@ def resample_ascat():
     io = HSAF_io()
 
     # Store NN of EASE2 grid points into CSV files
-    dir_out = paths.ascat / 'resampled'
+    dir_out = paths.ascat / 'timeseries'
+    if not dir_out.exists():
+        dir_out.mkdir()
+
     for gpi, lut in gpi_lut.iterrows():
         Ser = io.read(lut['ascat_gpi'])
         if Ser is not None:

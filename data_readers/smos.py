@@ -63,6 +63,9 @@ def resample_smos():
 
     # Write out valid time series of all CONIS GPIS into separate .csv files
     dir_out = paths.smos / 'timeseries'
+    if not dir_out.exists():
+        dir_out.mkdir()
+
     for i, gpi in enumerate(ease_gpis):
         Ser = pd.Series(res_arr[:,i],index=dates).dropna()
         if len(Ser) > 0:

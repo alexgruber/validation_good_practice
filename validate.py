@@ -130,8 +130,9 @@ def main(part, parts, sensors, alpha, res_path):
                     # rescale all columns to MERRA2 before calculating ubRMSD
                     tmp_df = df.copy()
                     for col in sensors:
-                        if col == 'MERRA2':
+                        if (col == 'MERRA2')|(not col in tmp_df):
                             continue
+
                         tmp_df.loc[:, col] = ((tmp_df[col] - tmp_df[col].mean()) / tmp_df[col].std()) * tmp_df[
                             'MERRA2'].std() + tmp_df['MERRA2'].mean()
                     ubrmsd = ubRMSD(tmp_df, alpha=alpha, n_corr=b.loc[:,:,'n_corr'])

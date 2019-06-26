@@ -8,7 +8,7 @@ Included are all processing steps starting from the downloaded L2 soil moisture 
 
 The following external python packages are required, which can  be installed using conda or pip:
 
-`numpy, pandas, xarray, scipy, netCDF4, h5py, matplotlib, Basemap, pytesmo, ismn`
+`numpy, pandas, xarray, scipy, pytesmo, netCDF4, h5py, dask, matplotlib, Basemap, ismn`
 
 Results in the paper can be reproduced as follows:
 

@@ -12,6 +12,9 @@ def generate_station_list():
 
     paths = Paths()
 
+    # !!! This line eventually runs into an error, probably because of incompatability between ismn (v0.3) and  !!!
+    # !!! numpy (v1.16.3). This can be fixed by adding "allow_pickle=True" to the np.load statement in L554     !!!
+    # !!! of ISMN_Interface                                                                                     !!!
     io = ISMN_Interface(paths.ismn / 'downloaded' / 'CONUS_20100101_20190101')
 
     # get metadata indices of all stations that measure soil moisture within the first 10 cm
@@ -53,6 +56,9 @@ def resample_ismn():
 
     paths = Paths()
 
+    # !!! This line eventually runs into an error, probably because of incompatability between ismn (v0.3) and  !!!
+    # !!! numpy (v1.16.3). This can be fixed by adding "allow_pickle=True" to the np.load statement in L554     !!!
+    # !!! of ISMN_Interface                                                                                     !!!
     io = ISMN_Interface(paths.ismn / 'downloaded' / 'CONUS_20100101_20190101')
 
     # get all stations / sensors for each grid cell.
@@ -60,6 +66,8 @@ def resample_ismn():
     lut = lut.groupby('ease2_gpi').apply(lambda x: '-'.join([i for i in x.index]))
 
     dir_out = paths.ismn / 'timeseries'
+    if not dir_out.exists():
+        dir_out.mkdir()
 
     for cnt, (gpi, indices) in enumerate(lut.iteritems()):
         print('%i / %i' % (cnt, len(lut)))
@@ -101,11 +109,4 @@ def resample_ismn():
 
             # Average measurements of all stations
             df.mean(axis='columns').tz_convert(None).to_csv(fname, float_format='%.4f')
-
-
-if __name__=='__main__':
-
-    # generate_station_list()
-    resample_timeseries()
-
 

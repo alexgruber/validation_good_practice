@@ -24,6 +24,8 @@ def resample_merra2(part=1, parts=1):
     paths = Paths()
 
     dir_out = paths.merra2 / 'timeseries'
+    if not dir_out.exists():
+        dir_out.mkdir()
 
     path = paths.merra2 / 'raw' / '2015-2018'
     files = np.array(sorted(path.glob('*')))

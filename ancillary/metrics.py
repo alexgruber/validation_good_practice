@@ -63,7 +63,7 @@ def estimate_lag1_autocorr(df, tau=None):
     if tau is None:
         tau = estimate_tau(df)
 
-    # Calculate gemetric average lag-1 auto-corr
+    # Calculate geometric average lag-1 auto-corr
     avg_spc_t = np.median((df.index[1::] - df.index[0:-1]).days)
     rho_i = np.exp(-avg_spc_t/tau)
     rho = rho_i.prod()**(1./len(rho_i))
