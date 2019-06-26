@@ -183,14 +183,15 @@ def boxplot_tca(path, sensors):
                 plt.axvline(i + 0.5, linewidth=1, color='k')
 
             if mode == 'abs':
-                plt.ylabel(m, fontsize=fontsize)
+                tmp_m = 'R$^2$' if m == 'r2' else 'ubRMSE'
+                plt.ylabel(tmp_m, fontsize=fontsize)
 
             if m == 'r2':
-                plt.title(('Absolute values' if mode=='abs' else 'Anomalies'),fontsize=fontsize)
+                plt.title(('Raw time series' if mode=='abs' else 'Anomalies'),fontsize=fontsize)
 
     f.subplots_adjust(hspace=0.3)
 
-    plt.figlegend((box['boxes'][0:3]), titles, 'upper left', bbox_to_anchor=(axpos.x1-0.15,axpos.y1-0.042), fontsize=fontsize - 2)
+    plt.figlegend((box['boxes'][0:3][::-1]), titles[::-1], 'upper left', bbox_to_anchor=(axpos.x1-0.15,axpos.y1-0.042), fontsize=fontsize - 2)
 
     fout = path / 'plots' / ('boxplot_tca.png')
     f.savefig(fout, dpi=300, bbox_inches='tight')
@@ -305,7 +306,7 @@ def boxplot_relative_metrics(path):
     cistr_l = 'CI$_{%i}$' % (alpha / 2)
 
     params = ['l_', 'p_', 'u_']
-    titles = [cistr_l, 'p.est.', cistr_u]
+    titles = [cistr_l, 'skill estimate', cistr_u]
 
     figsize = (15, 12)
     fontsize = 14
@@ -365,14 +366,14 @@ def boxplot_relative_metrics(path):
             for i in np.arange(1,len(tup)):
                 plt.axvline(i + 0.5, linewidth=1, color='k')
 
+            tmp_m = 'R$^2$' if m == 'r' else 'ubRMSD' if m == 'ubrmsd' else m
 
-            tmp_m = 'R$^2$' if m == 'r' else m
-            label = (tmp_m + ' (abs.)' if mode == 'abs' else tmp_m + ' (anom.)')
+            label = (tmp_m + ' (raw)' if mode == 'abs' else tmp_m + ' (anomaly)')
             plt.ylabel(label, fontsize=fontsize)
 
     f.subplots_adjust(hspace=0.25)
 
-    plt.figlegend((box['boxes'][0:3]), titles, 'upper left', bbox_to_anchor=(axpos.x1 - 0.04, axpos.y0 + 0.0),
+    plt.figlegend((box['boxes'][0:3][::-1]), titles[::-1], 'upper left', bbox_to_anchor=(axpos.x1 - 0.04, axpos.y0 + 0.0),
                   fontsize=fontsize - 2)
 
     fout = path / 'plots' / ('boxplot_relative_metrics.png')
@@ -468,10 +469,11 @@ def spatial_plot_tca_diff(path):
             im = plot_ease_img(res, tag, fontsize=fontsize, cbrange=cb, cmap=('jet_r' if m == 'r2' else 'jet'), print_median=True)
 
             if m == 'r2':
-                plt.ylabel(('Absolute' if mode == 'abs' else 'Anomalies'),fontsize=fontsize)
+                plt.ylabel(('Raw time series' if mode == 'abs' else 'Anomalies'),fontsize=fontsize)
 
             if mode == 'abs':
-                plt.title('$\Delta$' + m + ' ASCAT', fontsize=fontsize)
+                tmp_m = 'R$^2$' if m == 'r2' else 'ubRMSE'
+                plt.title('$\Delta$' + tmp_m + ' ASCAT', fontsize=fontsize)
 
     f.subplots_adjust(hspace=0.0, wspace=0.02, bottom=0.09)
 
@@ -605,7 +607,7 @@ def spatial_plot_relative_metrics_ci_diff(path):
 
     params = ['p_', 'diff_']
 
-    fontsize = 14
+    fontsize = 12
 
     mode = 'abs'
     m = 'bias'
@@ -669,7 +671,7 @@ def spatial_plot_relative_metrics_ci_diff(path):
                 plt.title(tit, fontsize=fontsize)
 
             if p == 'p_':
-                plt.ylabel(n, fontsize=fontsize - 2)
+                plt.ylabel(n, fontsize=fontsize)
 
     f.subplots_adjust(wspace=0.02, hspace=0.04, bottom=0.1)
 
@@ -716,7 +718,7 @@ def spatial_plot_relative_metrics_ci_diff(path):
 
         for m, cb, cb_diff in zip(metric, cbrange, cbrange_diff):
 
-            titles = ['R$^2$' if m=='r' else m, cistr_u + ' - ' + cistr_l]
+            titles = ['R$^2$' if m=='r' else 'ubRMSD', cistr_u + ' - ' + cistr_l]
 
             f = plt.figure(figsize=figsize)
 
@@ -773,14 +775,14 @@ def spatial_plot_relative_metrics_ci_diff(path):
                         plt.title(tit, fontsize=fontsize)
 
                     if p == 'p_':
-                        plt.ylabel(n,fontsize=fontsize-2)
+                        plt.ylabel(n,fontsize=fontsize)
 
-            f.subplots_adjust(wspace=0.02, hspace=0.0, bottom=0.05)
+            f.subplots_adjust(wspace=0.02, hspace=0.0, bottom=0.045)
 
             pos1 = im_r.axes.get_position()
             pos2 = im.axes.get_position()
 
-            cbar_ax = f.add_axes([pos1.x0, 0.028, pos1.x1 - pos1.x0, 0.02])
+            cbar_ax = f.add_axes([pos1.x0, 0.028, pos1.x1 - pos1.x0, 0.015])
 
             if m == 'r':
                 ticks = np.arange(cb[0], cb[1], 0.2)
@@ -793,7 +795,7 @@ def spatial_plot_relative_metrics_ci_diff(path):
             for t in cbar.ax.get_xticklabels():
                 t.set_fontsize(fontsize)
 
-            cbar_ax = f.add_axes([pos2.x0, 0.028, pos2.x1 - pos2.x0, 0.02])
+            cbar_ax = f.add_axes([pos2.x0, 0.028, pos2.x1 - pos2.x0, 0.015])
             cbar = f.colorbar(im, orientation='horizontal', cax=cbar_ax, ticks=ticks_diff)
             for t in cbar.ax.get_xticklabels():
                 t.set_fontsize(fontsize)
@@ -807,12 +809,40 @@ def spatial_plot_n(path):
 
     res = pd.read_csv(path / 'result.csv', index_col=0)
 
-    fontsize = 16
+    fontsize = 14
 
-    f = plt.figure(figsize=(10,6))
+    f = plt.figure(figsize=(17,3))
 
-    plot_ease_img(res, 'n_grid', fontsize=fontsize, cbrange=[0,400], plot_cb=True)
-    plt.title('# temporal matches', fontsize=fontsize)
+    plt.subplot(1, 3, 1)
+    im1 = plot_ease_img(res, 'n_grid', fontsize=fontsize, cbrange=[0,400], plot_cb=False)
+    plt.title('# temporal matches (uncorrected)', fontsize=fontsize)
+
+    plt.subplot(1, 3, 2)
+    im2 = plot_ease_img(res, 'n_corr_grid_anom_st_tc', fontsize=fontsize, cbrange=[0,400], plot_cb=False)
+    plt.title('auto-correlation corrected (anomalies)', fontsize=fontsize)
+
+    plt.subplot(1, 3, 3)
+    im3 = plot_ease_img(res, 'n_corr_grid_abs_tc', fontsize=fontsize, cbrange=[0,200], plot_cb=False)
+    plt.title('auto-correlation corrected (raw)', fontsize=fontsize)
+
+    f.subplots_adjust(wspace=0.04, bottom=0.05)
+
+    pos1 = im1.axes.get_position()
+    pos2 = im2.axes.get_position()
+    pos3 = im3.axes.get_position()
+
+    c1 = (pos1.x1+pos1.x0)/2
+    c2 = (pos2.x1+pos2.x0)/2
+
+    cbar_ax = f.add_axes([c1, 0.02, c2-c1, 0.07])
+    cbar = f.colorbar(im1, orientation='horizontal', cax=cbar_ax)
+    for t in cbar.ax.get_xticklabels():
+        t.set_fontsize(fontsize)
+
+    cbar_ax = f.add_axes([pos3.x0, 0.02, pos3.x1-pos3.x0, 0.07])
+    cbar = f.colorbar(im3, orientation='horizontal', cax=cbar_ax)
+    for t in cbar.ax.get_xticklabels():
+        t.set_fontsize(fontsize)
 
     fout = path / 'plots' / 'spatial_plot_sample_size.png'
     f.savefig(fout, dpi=300, bbox_inches='tight')
@@ -828,13 +858,13 @@ def spatial_plot_n(path):
 
         cbrange = [0,(200 if mode == 'abs' else 400)]
 
-        f = plt.figure(figsize=(17, 9))
+        f = plt.figure(figsize=(17, 6))
 
         i = 0
         for t, n in zip (tuples,names):
             i += 1
 
-            plt.subplot(3, 3, i)
+            plt.subplot(2, 3, i)
 
             tag = 'n_corr_grid_' + mode + '_' + t
 
@@ -846,13 +876,18 @@ def spatial_plot_n(path):
 
             im = plot_ease_img(res, tag, fontsize=fontsize, cbrange=cbrange)
 
+            if i == 5:
+                ax = im.axes
+
             plt.title(n, fontsize=fontsize)
 
-        plt.subplot(3, 3, 8)
-        plot_ease_img(res, 'n_corr_grid_' + mode + '_tc', fontsize=fontsize, cbrange=cbrange, plot_cb=True)
-        plt.title('All', fontsize=fontsize)
+        f.subplots_adjust(wspace=0.04, hspace=0.025, bottom=0.06)
 
-        f.subplots_adjust(wspace=0.04, hspace=0.03, bottom=0.05)
+        pos = ax.get_position()
+        cbar_ax = f.add_axes([pos.x0, 0.03, pos.x1 - pos.x0, 0.04])
+        cbar = f.colorbar(im, orientation='horizontal', cax=cbar_ax)
+        for t in cbar.ax.get_xticklabels():
+            t.set_fontsize(fontsize)
 
         fout = path / 'plots' / ('spatial_plot_sample_size_corrected_' + mode + '.png')
         f.savefig(fout, dpi=300, bbox_inches='tight')
@@ -878,5 +913,7 @@ def generate_plots():
     boxplot_tca(path, sensors)
 
 
+if __name__=='__main__':
+    generate_plots()
 
 

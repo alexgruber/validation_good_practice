@@ -1,8 +1,8 @@
 # Validation Good Practice Example
 
-This package holds the source code that has been used to create the results shown in Appendix B of the soil moisture validation good practice paper:
+This package holds the source code that has been used to create the results shown in Appendix A of the soil moisture validation good practice paper:
  
-"Validation practices for satellite soil moisture products - What are (the) errors?"
+"Validation practices for satellite soil moisture products: What are (the) errors?"
 
 Included are all processing steps starting from the downloaded L2 soil moisture data as described in the paper and in the readme of validation_good_practice.data readers.
 
