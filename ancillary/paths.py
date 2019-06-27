@@ -18,3 +18,9 @@ class Paths(object):
         self.merra2 = self.data_root / 'MERRA2'
         self.ismn = self.data_root / 'ISMN'
 
+        # ASCAT raw data should be in self.ascat with the folder names matching the H SAF version number as downloaded
+        self.smos_raw = self.smos  / 'raw' / 'MIR_SMUDP2_nc'
+        self.smap_raw = self.smos  / 'raw'
+        self.merra2_raw = self.merra2 / 'raw' / '2015-2018'
+        self.ismn_raw = self.ismn / 'downloaded' / 'CONUS_20100101_20190101'
+

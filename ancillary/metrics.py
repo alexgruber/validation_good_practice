@@ -34,7 +34,7 @@ def estimate_tau(in_df, n_lags=90):
     for i in np.arange(n_cols):
         try:
             ind = np.where(~np.isnan(rho[i,:]))[0]
-            if len(ind) > 20:
+            if len(ind) > 10:
                 popt = optimization.curve_fit(lambda x, a: np.exp(a * x), np.arange(n_lags)[ind], rho[i,ind],
                                               bounds = [-1., -1. / n_lags])[0]
                 tau[i] = np.log(np.exp(-1.)) / popt
@@ -88,7 +88,7 @@ def correct_n(df, rho=None):
     if rho is None:
         rho = estimate_lag1_autocorr(df)
 
-    return int(round(len(df) * (1 - rho) / (1 + rho)))
+    return round(len(df) * (1 - rho) / (1 + rho))
 
 
 def calc_bootstrap_blocklength(df, rho=None):
@@ -315,7 +315,7 @@ def bias(df, dropna=True, alpha=0.95, flatten=True, n_corr=None):
                 n_corr_ds = correct_n(tmpdf)
             res.loc[ds1, ds2, 'n_corr'] = n_corr_ds
             res.loc[ds2, ds1, 'n_corr'] = n_corr_ds
-            if n_corr_ds < 5:
+            if n_corr_ds < 2:
                 continue
 
             # Confidence intervals with corrected sample size

@@ -13,24 +13,18 @@ if platform.system() in ['Linux', 'Darwin']:
 import matplotlib.pyplot as plt
 from mpl_toolkits.basemap import Basemap
 
-from pathlib import Path
-
 from itertools import combinations
 
 from validation_good_practice.ancillary.grid import EASE2
 from validation_good_practice.ancillary.paths import Paths
-
-from validation_good_practice.ancillary.metrics import bias, ubRMSD, Pearson_R, TCA
-
-from validation_good_practice.data_readers.interface import reader
 
 
 def boxplot_tca_ismn(path, sensors):
 
     res = pd.read_csv(path / 'result.csv', index_col=0)
 
-    metric = ['bias', 'r2', 'ubrmse']
-    ylim = [[0, 1.5], [0, 1], [0, 0.1]]
+    metric = ['r2', 'ubrmse']
+    ylim = [[0, 1], [0, 0.08]]
 
     sensors = sensors[:-2]
 
@@ -41,7 +35,7 @@ def boxplot_tca_ismn(path, sensors):
     params = ['l_', 'm_', 'u_']
     titles = [cistr_l, 'CI$_{50}$', cistr_u]
 
-    figsize = (10, 8)
+    figsize = (13, 5)
     fontsize = 14
 
     pos = [i + j for i in np.arange(1,len(sensors)+1) for j in [-0.2,0,0.2]]
@@ -51,55 +45,66 @@ def boxplot_tca_ismn(path, sensors):
 
     n = 0
     for m, yl in zip(metric, ylim):
-        n += 1
+        for mode in ['abs', 'anom_st']:
+            n += 1
 
-        ax = plt.subplot(3, 1, n)
+            ax = plt.subplot(2, 2, n)
 
-        if n == 1:
-            axpos = ax.get_position()
+            if n == 4:
+                axpos = ax.get_position()
 
-        plt.grid(color='k', linestyle='--', linewidth=0.25)
+            plt.grid(color='k', linestyle='--', linewidth=0.25)
 
-        data = list()
+            data = list()
 
-        for s in sensors:
-            for p, t in zip(params, titles):
+            for s in sensors:
+                for p, t in zip(params, titles):
 
-                if s == 'ASCAT':
-                    if 'SMAP' in sensors:
-                        tag = m + '_ismn_abs_' + p + s
-                        res[tag] = (res[tag + '_tc_ASCAT_SMOS_ISMN'] + res[tag + '_tc_ASCAT_SMAP_ISMN']) / 2
+                    if s == 'ASCAT':
+                        if 'SMAP' in sensors:
+                            tag = m + '_ismn_'+mode+'_' + p + s
+                            res[tag] = (res[tag + '_tc_ASCAT_SMOS_ISMN'] + res[tag + '_tc_ASCAT_SMAP_ISMN']) / 2
+                        else:
+                            tag = m + '_ismn_'+mode+'_' + p + s + '_tc_ASCAT_SMOS_ISMN'
                     else:
-                        tag = m + '_ismn_abs_' + p + s + '_tc_ASCAT_SMOS_ISMN'
-                else:
-                    tag = m + '_ismn_abs_' + p + s + '_tc_ASCAT_' + s + '_ISMN'
+                        tag = m + '_ismn_'+mode+'_' + p + s + '_tc_ASCAT_' + s + '_ISMN'
 
-                tmp = res[tag].values
-                data.append(tmp[~np.isnan(tmp)])
+                    tmp = res[tag].values
+                    data.append(tmp[~np.isnan(tmp)])
 
-        box = ax.boxplot(data, whis=[10, 90], showfliers=False, positions=pos, widths=0.10, patch_artist=True)
-        for patch, color in zip(box['boxes'], colors):
-            patch.set(color='black', linewidth=2)
-            patch.set_facecolor(color)
-        for patch in box['medians']:
-            patch.set(color='black', linewidth=2)
-        for patch in box['whiskers']:
-            patch.set(color='black', linewidth=1)
+            box = ax.boxplot(data, whis=[10, 90], showfliers=False, positions=pos, widths=0.10, patch_artist=True)
+            for patch, color in zip(box['boxes'], colors):
+                patch.set(color='black', linewidth=2)
+                patch.set_facecolor(color)
+            for patch in box['medians']:
+                patch.set(color='black', linewidth=2)
+            for patch in box['whiskers']:
+                patch.set(color='black', linewidth=1)
 
-        plt.xlim(0.5, 3.5)
-        plt.xticks(np.arange(1,4),sensors, fontsize=fontsize)
+            plt.xlim(0.5, 3.5)
 
-        plt.ylim(yl)
-        plt.yticks(fontsize=fontsize)
+            plt.xticks(np.arange(1,4),sensors, fontsize=fontsize)
 
-        for i in np.arange(1,3):
-            plt.axvline(i + 0.5, linewidth=1, color='k')
+            plt.ylim(yl)
 
-        plt.ylabel(m, fontsize=fontsize)
+            if m == 'r2':
+                plt.yticks(fontsize=fontsize)
+            else:
+                plt.yticks(np.arange(0,0.1,0.02), fontsize=fontsize)
 
-    f.subplots_adjust(hspace=0.2)
+            for i in np.arange(1,3):
+                plt.axvline(i + 0.5, linewidth=1, color='k')
 
-    plt.figlegend((box['boxes'][0:3]), titles, 'upper left', bbox_to_anchor=(axpos.x0-0.04,axpos.y1-0.055), fontsize=fontsize - 2)
+            if mode == 'abs':
+                tmp_m = 'R$^2$' if m == 'r2' else 'ubRMSE'
+                plt.ylabel(tmp_m, fontsize=fontsize)
+
+            if m == 'r2':
+                plt.title(('Raw time series' if mode=='abs' else 'Anomalies'),fontsize=fontsize)
+
+    f.subplots_adjust(hspace=0.3)
+
+    plt.figlegend((box['boxes'][0:3][::-1]), titles[::-1], 'upper left', bbox_to_anchor=(axpos.x1-0.15,axpos.y1-0.042), fontsize=fontsize - 2)
 
     fout = path / 'plots' / ('boxplot_tca_ismn.png')
     f.savefig(fout, dpi=300, bbox_inches='tight')
@@ -203,85 +208,87 @@ def boxplot_relative_metrics_ismn(path):
     res = pd.read_csv(path / 'result.csv', index_col=0)
 
     metric = ['bias', 'r', 'ubrmsd']
-    ylim = [[-0.12,0.12], [0, 1], [0.02, 0.25]]
-
-    sensors = ['ASCAT', 'SMOS', 'SMAP', 'MERRA2', 'ISMN']
-    tuples = ['_'.join(t) for t in combinations(sensors, 2)]
-    names = [' - '.join(t) for t in combinations(sensors, 2)]
+    ylim_abs = [[-0.12,0.07], [0, 1], [0.0, 0.1]]
+    ylim_anom = [[-0.12,0.12], [0, 1], [0.0, 0.04]]
 
     alpha = 100 - float(path.parent.name[2:])
     cistr_u = 'CI$_{%i}$' % (100 - alpha / 2)
     cistr_l = 'CI$_{%i}$' % (alpha / 2)
 
     params = ['l_', 'p_', 'u_']
-    titles = [cistr_l, 'p.est.', cistr_u]
+    titles = [cistr_l, 'skill estimate', cistr_u]
 
-    figsize = (24, 8)
+    figsize = (22, 12)
     fontsize = 14
-
-    pos = [i + j for i in np.arange(1,len(tuples)+1) for j in [-0.2,0,0.2]]
-    colors = [s for n in np.arange(len(tuples)) for s in ['lightblue', 'lightgreen', 'coral'] ]
 
     f = plt.figure(figsize=figsize)
 
-    n = 0
-    for m, yl in zip(metric, ylim):
-        n += 1
+    r = -1
+    for m, yl_abs, yl_anom in zip(metric, ylim_abs, ylim_anom):
+
+        for mode in ['abs', 'anom_st']:
+            if (m == 'bias') & (mode == 'anom_st'):
+                continue
+            r+= 1
+
+            if m == 'bias':
+                sensors = ['SMOS', 'SMAP', 'MERRA2']
+            else:
+                sensors = ['ASCAT', 'SMOS', 'SMAP', 'MERRA2', 'ISMN']
+
+            tup = ['_'.join(t) for t in combinations(sensors, 2)]
+            nam = [' - '.join(t) for t in combinations(sensors, 2)]
+
+            pos = [i + j for i in np.arange(1,len(tup)+1) for j in [-0.2,0,0.2]]
+            colors = [s for n in np.arange(len(tup)) for s in ['lightblue', 'lightgreen', 'coral'] ]
+
+            ax = plt.subplot2grid((5, 3),(r,0), colspan=(1 if m=='bias' else 3))
+
+            if r == 0:
+                axpos = ax.get_position()
+
+            plt.grid(color='k', linestyle='--', linewidth=0.25)
+
+            data = list()
+
+            for t in tup:
+                for p in params:
+
+                    tag = m + '_ismn_'+ mode + '_' + p + t
+
+                    if m == 'r':
+                        res[tag] *= res[tag]
+
+                    tmp = res[tag].values
+                    data.append(tmp[~np.isnan(tmp)])
 
 
-        ax = plt.subplot(3, 1, n)
+            box = ax.boxplot(data, whis=[10, 90], showfliers=False, positions=pos, widths=0.10, patch_artist=True)
+            for patch, color in zip(box['boxes'], colors):
+                patch.set(color='black', linewidth=2)
+                patch.set_facecolor(color)
+            for patch in box['medians']:
+                patch.set(color='black', linewidth=2)
+            for patch in box['whiskers']:
+                patch.set(color='black', linewidth=1)
 
-        if n == 1:
-            axpos = ax.get_position()
+            plt.xlim(0.5, len(tup) + 0.5)
+            plt.xticks(np.arange(1,len(tup)+1), nam, fontsize=fontsize)
 
-        plt.grid(color='k', linestyle='--', linewidth=0.25)
+            plt.ylim((yl_abs if mode == 'abs' else yl_anom))
+            plt.yticks(fontsize=fontsize)
 
-        data = list()
+            for i in np.arange(1,len(tup)):
+                plt.axvline(i + 0.5, linewidth=1, color='k')
 
-        for t in tuples:
-            for p in params:
+            tmp_m = 'R$^2$' if m == 'r' else 'ubRMSD' if m == 'ubrmsd' else m
 
-                if (m == 'bias') & ((t[0:5] == 'ASCAT')|(t[-4::] == 'ISMN')):
-                    data.append([])
-                    continue
+            label = (tmp_m + ' (raw)' if mode == 'abs' else tmp_m + ' (anomaly)')
+            plt.ylabel(label, fontsize=fontsize)
 
-                tag = m + '_ismn_abs_' + p + t
+    f.subplots_adjust(hspace=0.25)
 
-                if tag not in res:
-                    data.append([])
-                    continue
-
-                if m == 'r':
-                    res[tag] *= res[tag]
-
-                tmp = res[tag].values
-                data.append(tmp[~np.isnan(tmp)])
-
-
-        box = ax.boxplot(data, whis=[10, 90], showfliers=False, positions=pos, widths=0.10, patch_artist=True)
-        for patch, color in zip(box['boxes'], colors):
-            patch.set(color='black', linewidth=2)
-            patch.set_facecolor(color)
-        for patch in box['medians']:
-            patch.set(color='black', linewidth=2)
-        for patch in box['whiskers']:
-            patch.set(color='black', linewidth=1)
-
-        plt.xlim(0.5, len(tuples)+0.5)
-        plt.xticks(np.arange(1,len(tuples)+1), names, fontsize=fontsize)
-
-        plt.ylim(yl)
-        plt.yticks(fontsize=fontsize)
-
-        for i in np.arange(1,len(tuples)):
-            plt.axvline(i + 0.5, linewidth=1, color='k')
-
-        plt.ylabel(m, fontsize=fontsize)
-
-
-    f.subplots_adjust(hspace=0.2)
-
-    plt.figlegend((box['boxes'][0:3]), titles, 'upper left', bbox_to_anchor=(axpos.x0 - 0.06, axpos.y1 - 0.055),
+    plt.figlegend((box['boxes'][0:3][::-1]), titles[::-1], 'upper left', bbox_to_anchor=(axpos.x1 - 0.06, axpos.y0 + 0.0),
                   fontsize=fontsize - 2)
 
     fout = path / 'plots' / ('boxplot_relative_metrics_ismn.png')
@@ -295,11 +302,7 @@ def boxplot_relative_metrics(path):
 
     metric = ['bias', 'r', 'ubrmsd']
     ylim_abs = [[-0.12,0.07], [0, 1], [0.0, 0.1]]
-    ylim_anom = [[-0.12,0.12], [0, 1], [0.0, 0.06]]
-
-    sensors = ['ASCAT', 'SMOS', 'SMAP', 'MERRA2']
-    tuples = ['_'.join(t) for t in combinations(sensors, 2)]
-    names = [' - '.join(t) for t in combinations(sensors, 2)]
+    ylim_anom = [[-0.12,0.12], [0, 1], [0.0, 0.04]]
 
     alpha = 100 - float(path.parent.name[2:])
     cistr_u = 'CI$_{%i}$' % (100 - alpha / 2)
@@ -321,8 +324,13 @@ def boxplot_relative_metrics(path):
                 continue
             r+= 1
 
-            tup = (tuples[3::] if m == 'bias' else tuples)
-            nam = (names[3::] if m == 'bias' else names)
+            if m == 'bias':
+                sensors = ['SMOS', 'SMAP', 'MERRA2']
+            else:
+                sensors = ['ASCAT', 'SMOS', 'SMAP', 'MERRA2']
+
+            tup = ['_'.join(t) for t in combinations(sensors, 2)]
+            nam = [' - '.join(t) for t in combinations(sensors, 2)]
 
             pos = [i + j for i in np.arange(1,len(tup)+1) for j in [-0.2,0,0.2]]
             colors = [s for n in np.arange(len(tup)) for s in ['lightblue', 'lightgreen', 'coral'] ]
@@ -379,7 +387,6 @@ def boxplot_relative_metrics(path):
     fout = path / 'plots' / ('boxplot_relative_metrics.png')
     f.savefig(fout, dpi=300, bbox_inches='tight')
     plt.close()
-
 
 
 def plot_ease_img(data, tag,
@@ -466,7 +473,7 @@ def spatial_plot_tca_diff(path):
 
             res[tag] = (res[tag1] - res[tag2])
 
-            im = plot_ease_img(res, tag, fontsize=fontsize, cbrange=cb, cmap=('jet_r' if m == 'r2' else 'jet'), print_median=True)
+            plot_ease_img(res, tag, fontsize=fontsize, cbrange=cb, cmap=('jet_r' if m == 'r2' else 'jet'), print_median=True)
 
             if m == 'r2':
                 plt.ylabel(('Raw time series' if mode == 'abs' else 'Anomalies'),fontsize=fontsize)
@@ -901,7 +908,7 @@ def generate_plots():
     path = Paths().result_root / 'CI80' / ('_'.join(sensors))
 
     if not (path / 'plots').exists():
-        Path.mkdir(path / 'plots')
+        (path / 'plots').mkdir()
 
     spatial_plot_n(path)
 
@@ -911,6 +918,9 @@ def generate_plots():
     spatial_plot_tca_diff(path)
     spatial_plot_tca_ci_diff(path, sensors)
     boxplot_tca(path, sensors)
+
+    boxplot_relative_metrics_ismn(path)
+    boxplot_tca_ismn(path, sensors)
 
 
 if __name__=='__main__':

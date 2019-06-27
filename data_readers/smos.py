@@ -19,7 +19,7 @@ def resample_smos():
     paths = Paths()
 
     # Collect all .nc files
-    path = paths.smos / 'raw' / 'MIR_SMUDP2_nc'
+    path = paths.smos_raw
     nc_files = sorted(path.glob('**/*.nc'))
 
     # Get time stamp as the mean of start-of-orbit and end-of-orbit

@@ -24,7 +24,7 @@ def reformat_smap():
     ease_gpis = pd.read_csv(paths.lut, index_col=0).index.values
 
     # Collect orbit file list and extract date info from file name
-    fdir = paths.smap / 'raw'
+    fdir = paths.smap_raw
     files = sorted(fdir.glob('*'))
     dates = pd.to_datetime([str(f)[-29:-14] for f in files]).round('min')
 

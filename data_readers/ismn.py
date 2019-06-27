@@ -12,10 +12,7 @@ def generate_station_list():
 
     paths = Paths()
 
-    # !!! This line eventually runs into an error, probably because of incompatability between ismn (v0.3) and  !!!
-    # !!! numpy (v1.16.3). This can be fixed by adding "allow_pickle=True" to the np.load statement in L554     !!!
-    # !!! of ISMN_Interface                                                                                     !!!
-    io = ISMN_Interface(paths.ismn / 'downloaded' / 'CONUS_20100101_20190101')
+    io = ISMN_Interface(paths.ismn_raw)
 
     # get metadata indices of all stations that measure soil moisture within the first 10 cm
     idx = io.get_dataset_ids('soil moisture', min_depth=0.0, max_depth=0.1)
@@ -56,10 +53,7 @@ def resample_ismn():
 
     paths = Paths()
 
-    # !!! This line eventually runs into an error, probably because of incompatability between ismn (v0.3) and  !!!
-    # !!! numpy (v1.16.3). This can be fixed by adding "allow_pickle=True" to the np.load statement in L554     !!!
-    # !!! of ISMN_Interface                                                                                     !!!
-    io = ISMN_Interface(paths.ismn / 'downloaded' / 'CONUS_20100101_20190101')
+    io = ISMN_Interface(paths.ismn_raw)
 
     # get all stations / sensors for each grid cell.
     lut = pd.read_csv(paths.ismn / 'station_list.csv',index_col=0)

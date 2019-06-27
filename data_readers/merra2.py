@@ -27,7 +27,7 @@ def resample_merra2(part=1, parts=1):
     if not dir_out.exists():
         dir_out.mkdir()
 
-    path = paths.merra2 / 'raw' / '2015-2018'
+    path = paths.merra2_raw
     files = np.array(sorted(path.glob('*')))
     ds = xr.open_mfdataset(files)
     lats = ds.lat.values
