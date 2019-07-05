@@ -61,6 +61,12 @@ from validation_good_practice.plots import generate_plots
 generate_plots()
 ```
 
+### MATLAB
+
+Validation metrics are also available in MATLAB and can be found at:
+
+`validation_good_practice._matlab_`
+
 ## Contact
 For any questions or feedback please contact alexander.gruber@kuleuven.be
 

@@ -215,7 +215,7 @@ def TCA(df, ref_ind=2, alpha=0.95, bootstraps=1000):
                        index=[met + mod for met in ['r2_', 'ubRMSE_', 'beta_'] for mod in ['p','l','m','u']])
 
     # Calculate TCA metrics from the original sample
-    res.loc['r2_p',:], res.loc['ubRMSE_p',:], res.loc['beta_p',:] = TCA_calc(next(bss), ref_ind=ref_ind)
+    res.loc['r2_p',:], res.loc['ubRMSE_p',:], res.loc['beta_p',:] = TCA_calc(df, ref_ind=ref_ind)
 
     arr = np.full((3, 3, bootstraps), np.nan)
 
