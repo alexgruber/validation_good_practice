@@ -14,14 +14,16 @@ def estimate_tau(in_df, n_lags=90):
     ----------
     in_df : pd.DataFrame
         Input data frame
-    n_lags : maximum allowed lag size to be considered
+    n_lags : maximum allowed lag size [days] to be considered
 
     """
 
+    # Approx. daily time steps are assumed here. For LSMs and in situ data, sub-daily (e.g. 3-hourly) predictions are
+    # disregarded, which increases speed but should not affect the estimate of tau much if time series are long enough.
     df = in_df.copy().resample('1D').last()
     n_cols = len(df.columns)
 
-    # calculate auto-correlation coefficients for different lags
+    # calculate auto-correlation coefficients for different lags [days]
     rho = np.full((n_cols,n_lags), np.nan)
     for lag in np.arange(n_lags):
         for i,col in enumerate(df):

@@ -160,7 +160,7 @@ def main(part, parts, sensors, alpha, res_path):
 
                     # calculate TCA-based metrics for all triplets except those including both SMOS and SMAP
                     for t in list(combinations(df.columns.values, 3)):
-                        if (('SMOS' in t) & ('SMAP' in t)):
+                        if ('SMOS' in t) & ('SMAP' in t):
                             continue
 
                         tcstr = '_tc_' + '_'.join(t)

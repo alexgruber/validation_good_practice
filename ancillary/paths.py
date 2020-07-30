@@ -6,9 +6,9 @@ class Paths(object):
 
     def __init__(self):
 
-        self.result_root = Path('/work/validation_good_practice')
+        self.result_root = Path('~/Documents/work/validation_good_practice').expanduser()
 
-        self.data_root = Path('/data_sets')
+        self.data_root = Path('~/data_sets').expanduser()
 
         self.lut = self.data_root / 'EASE2_grid' /'grid_lut.csv'
 

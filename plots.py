@@ -384,7 +384,7 @@ def boxplot_relative_metrics(path):
     plt.figlegend((box['boxes'][0:3][::-1]), titles[::-1], 'upper left', bbox_to_anchor=(axpos.x1 - 0.04, axpos.y0 + 0.0),
                   fontsize=fontsize - 2)
 
-    fout = path / 'plots' / ('boxplot_relative_metrics.png')
+    fout = path / 'plots' / 'boxplot_relative_metrics.png'
     f.savefig(fout, dpi=300, bbox_inches='tight')
     plt.close()
 

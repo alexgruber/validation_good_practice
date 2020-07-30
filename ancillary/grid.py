@@ -107,14 +107,14 @@ def create_lut():
     # This list is used here to restrict EASE2-grid cells to CONUS only.
 
     if add_ascat is True:
-        ascat_gpis = pd.read_csv(paths.ascat / 'warp5_grid' / 'pointlist_United States of America_warp.csv', index_col=0)
+        ascat_gpis = pd.read_csv(paths.ascat / 'warp5_grid' / 'pointlist_warp_conus.csv', index_col=0)
         ascat_gpis = ascat_gpis[(ascat_gpis.lon >= lonmin) & (ascat_gpis.lon <= lonmax) &
                                 (ascat_gpis.lat >= latmin) & (ascat_gpis.lat <= latmax)]
 
         ascat_gpis['ease2_gpi'] = -1
         ascat_gpis['r'] = -1
 
-        # Get ease grid indices and distence for each ASCAT grid cell
+        # Get ease grid indices and distance for each ASCAT grid cell
         for i, (idx, data) in enumerate(ascat_gpis.iterrows()):
             print('%i / %i' % (i, len(ascat_gpis)))
 
@@ -172,6 +172,7 @@ def create_lut():
             lut.loc[idx, 'merra2_lat'] = lats[np.where((r - r.min())<0.0001)]
 
 
-    if not lut.parent.exists():
-        lut.parent.mkdir()
+    if not fname.parent.exists():
+        fname.parent.mkdir()
     lut.to_csv(fname, float_format='%.6f')
+
